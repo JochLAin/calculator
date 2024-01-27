@@ -1,0 +1,33 @@
+version: '3'
+name: "${APP_NAME}-${APP_ENV}"
+
+services:
+  front:
+    image: "nginx"
+    container_name: "${APP_NAME}-${APP_ENV}-front"
+    ports: [ "${PORT_FRONT_HTTP}:80", "${PORT_FRONT_HTTPS}:443" ]
+    volumes:
+      - ".:/home/docker:ro"
+      - "./docker/front/nginx.conf:/etc/nginx/nginx.conf:ro"
+      - "./docker/front/default.conf:/etc/nginx/conf.d/default.conf:ro"
+      - "./docker/front/ssl.crt:/etc/nginx/keys/ssl.crt:ro"
+      - "./docker/front/ssl.csr:/etc/nginx/keys/ssl.csr:ro"
+      - "./docker/front/ssl.key:/etc/nginx/keys/ssl.key:ro"
+    working_dir: "/etc/nginx"
+
+#  build:
+#    image: "node:18"
+#    container_name: "${APP_NAME}-${APP_ENV}-build"
+#    user: "1000"
+#    environment:
+#      - "FONTAWESOME_NPM_AUTH_TOKEN=${FONTAWESOME_NPM_AUTH_TOKEN}"
+#      - "PORT_WEBPACK=${PORT_WEBPACK}"
+#    ports:
+#      - "${PORT_WEBPACK}:${PORT_WEBPACK}"
+#    tty: true #to have color in terminal when log
+#    working_dir: "/home/node"
+#    volumes:
+#      - "./docker/build:/home/docker"
+#      - "./:/home/node"
+#    command: "npm run serve"
+#    restart: "on-failure"

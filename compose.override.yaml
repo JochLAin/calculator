@@ -1,0 +1,24 @@
+version: '3'
+
+services:
+  front:
+    networks: [ "proxy", "default" ]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=proxy"
+
+      - "traefik.http.routers.${APP_NAME}-front.rule=Host(`${APP_NAME}.localhost`)"
+      - "traefik.http.routers.${APP_NAME}-front.middlewares=https-redirect"
+      - "traefik.http.routers.${APP_NAME}-front.service=${APP_NAME}-front"
+      - "traefik.http.routers.${APP_NAME}-front.entrypoints=web"
+      - "traefik.http.services.${APP_NAME}-front.loadbalancer.server.port=80"
+
+      - "traefik.http.routers.${APP_NAME}-front-secure.rule=Host(`${APP_NAME}.localhost`)"
+      - "traefik.http.routers.${APP_NAME}-front-secure.service=${APP_NAME}-front-secure"
+      - "traefik.http.routers.${APP_NAME}-front-secure.entrypoints=websecure"
+      - "traefik.http.routers.${APP_NAME}-front-secure.tls=true"
+      - "traefik.http.services.${APP_NAME}-front-secure.loadbalancer.server.scheme=https"
+      - "traefik.http.services.${APP_NAME}-front-secure.loadbalancer.server.port=443"
+
+networks:
+  proxy: { name: "proxy", external: true }
