@@ -177,178 +177,87 @@ impl Parser {
     }
 
     pub fn read(&mut self) -> Node {
-        let mut items: NodeValue = vec![];
+        // let value = self.prioritize_operations();
+        // self.create_tree(value)
+        let value = self.prioritize_operations().iter().map(|token| Left(token.clone())).collect();
+        Node::create("Test", value)
+    }
+
+    fn prioritize_operations(&mut self) -> Vec<Token> {
+        let mut items: Vec<Token> = vec![];
+        let mut operators: Vec<Token> = vec![];
+        let precedence = |c: &str| match c {
+            "+"|"-"|"|" => 1,
+            "*"|"/"|"&" => 2,
+            "#" => 3,
+            _ => 0,
+        };
+
         while !self.stream.eof() {
-            match self.next() {
+            match self.stream.next() {
                 Err(error) => panic!("{}", error),
-                Ok(node) => {
-                    if let Some(token) = node.get_token() {
-                        items.push(Left(token));
-                    } else if node.is("Expression") {
-                        items.append(&mut node.get_value());
-                    } else {
-                        items.push(Right(node));
-                    }
-                },
-            }
-        }
-        Node::create("Calcul", items)
-    }
-
-    pub fn next(&mut self) -> ParserResult {
-        if self.stream.is_muted() {
-            let token = self.stream.next().unwrap();
-            return Ok(Node::create_atom(token))
-        }
-
-        let mut nodes: NodeValue = vec![];
-        while !self.stream.eof() {
-            match self.parse_unary() {
-                Err(error) => return Err(Exception::relay(error, current_method!())),
-                Ok(atom) => {
-                    nodes.push(atom);
-                    if self.stream.is_operator() {
-                        let operator = self.stream.next().unwrap();
-                        match self.parse_unary() {
-                            Err(error) => return Err(Exception::relay(error, current_method!())),
-                            Ok(atom) => {
-                                return Ok(Node::create("Unary", vec![Right(Node::create("Expression", nodes)), Left(operator), atom]));
-                            },
+                Ok(token) => {
+                    // if token.is_identifier(None) {
+                    //     items.push(self.parse_function());
+                    // } else
+                    if token.is_whitespace(None) {
+                        continue;
+                    } else if token.is_number(None) {
+                        items.push(token);
+                    } else if token.is_punctuation(Some('(')) {
+                        operators.push(token);
+                    } else if token.is_punctuation(Some(')')) {
+                        while let Some(op) = operators.pop() {
+                            if op.is_operator(Some("(")) { break; }
+                            items.push(op);
                         }
-                    }
-                }
-            }
-        }
-        Ok(Node::create("Expression", nodes))
-    }
-
-    // fn parse_unary(&mut self) -> Result<NodeItem, Exception> {
-    //     let left_term = self.parse_value();
-    //     if !self.stream.is_operator() {
-    //         Err(Exception::create(Error::UnexpectedToken(self.stream.next().unwrap()), current_method!()))
-    //     }
-    //
-    //     let operator = self.stream.next().unwrap();
-    //     let right_term = self.parse_value();
-    // }
-
-    fn parse_arguments(&mut self) -> Result<Node, Exception> {
-        match self.stream.read_punctuation(Some("(")) {
-            Err(error) => Err(Exception::relay(error, current_method!())),
-            Ok(open) => {
-                let mut value: NodeValue = vec![Left(open)];
-                while !self.stream.eof() {
-                    let token = self.stream.peek(0).unwrap();
-                    if token.is_punctuation(Some(')')) { break; }
-                    let expr = self.parse_expression(|token| token.is_one_of_punctuation(vec![',', ')']));
-                    match expr {
-                        Err(error) => return Err(Exception::relay(error, current_method!())),
-                        Ok(mut nodes) => {
-                            value.append(&mut nodes);
-                            if self.stream.is_punctuation(Some(",")) {
-                                value.push(Left(self.stream.next().unwrap()));
+                    } else if token.is_operator(None) {
+                        while let Some(top) = operators.pop() {
+                            if precedence(token.get_value().as_str()) <= precedence(top.get_value().as_str()) {
+                                items.push(operators.pop().unwrap());
+                            } else {
+                                break;
                             }
                         }
-                    }
-                }
-                match self.stream.read_punctuation(Some(")")) {
-                    Err(error) => Err(Exception::relay(error, current_method!())),
-                    Ok(close) => {
-                        value.push(Left(close));
-                        Ok(Node::create("Argument", value))
-                    },
-                }
-            }
-        }
-    }
-
-    fn parse_expression<F>(&mut self, mut predicate: F) -> Result<NodeValue, Exception> where F: FnMut(Token) -> bool {
-        let mut value: NodeValue = vec![];
-        let mut decl: NodeValue = vec![];
-        while !self.stream.eof() {
-            let next = self.stream.peek(0).unwrap();
-            if !predicate(next) { break; }
-
-            match self.read_atom() {
-                Err(error) => return Err(Exception::relay(error, current_method!())),
-                Ok(atom) => {
-                    if let Left(token) = atom {
-                        if token.is_punctuation(None) || token.is_whitespace(None) {
-                            value.append(&mut decl);
-                            value.push(Left(token));
-                            break;
-                        } else {
-                            decl.push(Left(token));
-                        }
-                    } else if let Right(node) = atom {
-                        decl.push(Right(node));
+                        operators.push(token);
                     }
                 }
             }
         }
 
-        value.append(&mut decl);
-        Ok(value)
-    }
-
-    fn parse_function(&mut self, item: NodeItem) -> Result<Node, Exception> {
-        match self.parse_arguments() {
-            Err(error) => Err(Exception::relay(error, current_method!())),
-            Ok(args) => Ok(Node::create("Function", vec![item, Right(args)])),
+        while let Some(op) = operators.pop() {
+            items.push(op);
         }
+
+        items
     }
 
-    fn parse_unary(&mut self) -> Result<NodeItem, Exception> {
-        let result: Option<ParserResult> = if self.stream.is_punctuation(Some("(")) {
-            Some(self.parse_wrapped("Parenthesis", '(', ')'))
-        } else { None };
+    fn create_tree(&mut self, value: Vec<Token>) -> Node {
+        let mut stack: NodeValue = vec![];
+        let operations = |c: &str| match c {
+            "+" => "Addition",
+            "-" => "Subtraction",
+            "*" => "Multiplication",
+            "/" => "Division",
+            "^" => "Pow",
+            _ => "",
+        };
 
-        if let Some(value) = result {
-            match (value) {
-                Err(error) => Err(Exception::relay(error, current_method!())),
-                Ok(node) => Ok(Right(node)),
+        for token in value {
+            if token.is_whitespace(None) {
+                continue;
+            } else if token.is_number(None) {
+                stack.push(Left(token));
+            } else if token.is_operator(None) {
+                let b = stack.pop().unwrap();
+                let a = stack.pop().unwrap();
+                stack.push(Right(Node::create(
+                    operations(token.get_value().as_str()),
+                    vec![a, b]
+                )));
             }
         }
 
-        if self.stream.is_operator() {
-            Err(Exception::create(Error::UnexpectedToken(self.stream.next().unwrap()), current_method!()))
-        }
-
-        match self.stream.next() {
-            Err(error) => Err(Exception::relay(error, current_method!())),
-            Ok(token) => {
-                if token.is("Identifier") {
-                    match self.parse_function(Left(token)) {
-                        Err(error) => Err(Exception::relay(error, current_method!())),
-                        Ok(node) => Ok(Right(node)),
-                    }
-                } else {
-                    Ok(Left(token))
-                }
-            }
-        }
-    }
-
-    fn parse_wrapped(&mut self, kind: &str, open: char, close: char) -> Result<Node, Exception> {
-        match self.stream.read_punctuation(Some(&open.to_string())) {
-            Err(error) => Err(Exception::relay(error, current_method!())),
-            Ok(open) => {
-                match self.parse_expression(|token| !token.is_punctuation(Some(close))) {
-                    Err(error) => Err(Exception::relay(error, current_method!())),
-                    Ok(mut expr) => {
-                        match self.stream.read_punctuation(Some(&close.to_string())) {
-                            Err(error) => Err(Exception::relay(error, current_method!())),
-                            Ok(close) => {
-                                let mut value: NodeValue = vec![];
-                                value.push(Left(open));
-                                value.append(&mut expr);
-                                value.push(Left(close));
-                                Ok(Node::create(kind, value))
-                            },
-                        }
-                    }
-                }
-            }
-        }
+        Node::create("Calcul", stack)
     }
 }

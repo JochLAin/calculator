@@ -15,7 +15,7 @@
   \******************/
 /***/ ((module, __webpack_exports__, __webpack_require__) => {
 
-eval("__webpack_require__.a(module, async (__webpack_handle_async_dependencies__, __webpack_async_result__) => { try {\n__webpack_require__.r(__webpack_exports__);\n/* harmony import */ var _pkg_calculator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./pkg/calculator */ \"./pkg/calculator.js\");\nvar __webpack_async_dependencies__ = __webpack_handle_async_dependencies__([_pkg_calculator__WEBPACK_IMPORTED_MODULE_0__]);\n_pkg_calculator__WEBPACK_IMPORTED_MODULE_0__ = (__webpack_async_dependencies__.then ? (await __webpack_async_dependencies__)() : __webpack_async_dependencies__)[0];\n\n\nconst calcul = \"(2 + 3 * 4) / (-5e-1 + 6) - 7\";\n\nconsole.log(JSON.parse(_pkg_calculator__WEBPACK_IMPORTED_MODULE_0__.lex(calcul, true)));\nconsole.log(JSON.parse(_pkg_calculator__WEBPACK_IMPORTED_MODULE_0__.parse(calcul, true)));\n\n__webpack_async_result__();\n} catch(e) { __webpack_async_result__(e); } });\n\n//# sourceURL=webpack://calculator/./index.js?");
+eval("__webpack_require__.a(module, async (__webpack_handle_async_dependencies__, __webpack_async_result__) => { try {\n__webpack_require__.r(__webpack_exports__);\n/* harmony import */ var _pkg_calculator__WEBPACK_IMPORTED_MODULE_0__ = __webpack_require__(/*! ./pkg/calculator */ \"./pkg/calculator.js\");\nvar __webpack_async_dependencies__ = __webpack_handle_async_dependencies__([_pkg_calculator__WEBPACK_IMPORTED_MODULE_0__]);\n_pkg_calculator__WEBPACK_IMPORTED_MODULE_0__ = (__webpack_async_dependencies__.then ? (await __webpack_async_dependencies__)() : __webpack_async_dependencies__)[0];\n\n\n// const calcul = \"(2 + 3 * 4) / (-5e-1 + 6) - 7\";\nconst calcul = \"(2 + 4 - 3 * 5) / (9 - 6)\";\n\nconsole.log(JSON.parse(_pkg_calculator__WEBPACK_IMPORTED_MODULE_0__.lex(calcul, true)));\nconsole.log(JSON.parse(_pkg_calculator__WEBPACK_IMPORTED_MODULE_0__.parse(calcul, false)));\n\n__webpack_async_result__();\n} catch(e) { __webpack_async_result__(e); } });\n\n//# sourceURL=webpack://calculator/./index.js?");
 
 /***/ }),
 
@@ -45,7 +45,7 @@ eval("__webpack_require__.r(__webpack_exports__);\n/* harmony export */ __webpac
   \********************************/
 /***/ ((module, exports, __webpack_require__) => {
 
-eval("module.exports = __webpack_require__.v(exports, module.id, \"8163c4d9ce4de17886cb\");\n\n//# sourceURL=webpack://calculator/./pkg/calculator_bg.wasm?");
+eval("module.exports = __webpack_require__.v(exports, module.id, \"7cd833b5b2bb0fd5edde\");\n\n//# sourceURL=webpack://calculator/./pkg/calculator_bg.wasm?");
 
 /***/ })
 

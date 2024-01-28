@@ -145,3 +145,7 @@ dist
 .yarn/build-state.yml
 .yarn/install-state.gz
 .pnp.*
+
+# built script
+/public/build/
+!/public/build/.gitkeep

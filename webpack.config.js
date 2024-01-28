@@ -6,6 +6,7 @@ module.exports = {
   output: {
     path: path.resolve(__dirname, "public/build"),
     filename: "bootstrap.js",
+    clean: true,
   },
   experiments: {
     asyncWebAssembly: true,

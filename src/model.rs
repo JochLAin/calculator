@@ -79,7 +79,7 @@ pub enum Token {
 }
 
 impl Token {
-    fn get_value(&self) -> String {
+    pub fn get_value(&self) -> String {
         match self {
             Token::Identifier(value, _, _) => value.to_string(),
             Token::Number(value, _, _) => value.to_string(),

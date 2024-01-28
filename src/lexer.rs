@@ -115,8 +115,8 @@ pub struct Lexer {
 }
 
 impl From<String> for Lexer {
-    fn from(content: &mut String) -> Self {
-        Lexer { input: InputStream::from(content.retain(|c| !c.is_whitespace())) }
+    fn from(content: String) -> Self {
+        Lexer { input: InputStream::from(content) }
     }
 }
 
