@@ -91,8 +91,8 @@ impl LexerStream {
         self.is(|token| token.is_whitespace(None))
     }
 
-    pub fn is_operator(&self) -> bool {
-        self.is_type_or_equal(None, |token, _| token.is_operator(None))
+    pub fn is_operator(&self, value: Option<&str>) -> bool {
+        self.is_type_or_equal(None, |token, _| token.is_operator(value))
     }
 
     pub fn is_one_of_punctuation(&self, value: Vec<char>) -> bool {
@@ -176,88 +176,92 @@ impl Parser {
         self.stream.eof()
     }
 
-    pub fn read(&mut self) -> Node {
-        // let value = self.prioritize_operations();
-        // self.create_tree(value)
-        let value = self.prioritize_operations().iter().map(|token| Left(token.clone())).collect();
-        Node::create("Test", value)
+    pub fn parse(&mut self) -> ParserResult {
+        match self.parse_additive() {
+            Err(error) => Err(Exception::relay(error, current_method!())),
+            Ok(value) => Ok(Node::create("Calcul", vec![value]))
+        }
     }
 
-    fn prioritize_operations(&mut self) -> Vec<Token> {
-        let mut items: Vec<Token> = vec![];
-        let mut operators: Vec<Token> = vec![];
-        let precedence = |c: &str| match c {
-            "+"|"-"|"|" => 1,
-            "*"|"/"|"&" => 2,
-            "#" => 3,
-            _ => 0,
-        };
-
-        while !self.stream.eof() {
-            match self.stream.next() {
-                Err(error) => panic!("{}", error),
-                Ok(token) => {
-                    // if token.is_identifier(None) {
-                    //     items.push(self.parse_function());
-                    // } else
-                    if token.is_whitespace(None) {
-                        continue;
-                    } else if token.is_number(None) {
-                        items.push(token);
-                    } else if token.is_punctuation(Some('(')) {
-                        operators.push(token);
-                    } else if token.is_punctuation(Some(')')) {
-                        while let Some(op) = operators.pop() {
-                            if op.is_operator(Some("(")) { break; }
-                            items.push(op);
-                        }
-                    } else if token.is_operator(None) {
-                        while let Some(top) = operators.pop() {
-                            if precedence(token.get_value().as_str()) <= precedence(top.get_value().as_str()) {
-                                items.push(operators.pop().unwrap());
-                            } else {
-                                break;
+    fn parse_additive(&mut self) -> Result<NodeItem, Exception> {
+        match self.parse_multiplicative() {
+            Err(error) => Err(Exception::relay(error, current_method!())),
+            Ok(mut left) => {
+                while !self.stream.eof() {
+                    if !self.stream.is_operator(Some("+")) && !self.stream.is_operator(Some("-")) { break; }
+                    match self.stream.next() {
+                        Err(error) => return Err(Exception::relay(error, current_method!())),
+                        Ok(token) => {
+                            match self.parse_multiplicative() {
+                                Err(error) => return Err(Exception::relay(error, current_method!())),
+                                Ok(right) => {
+                                    if token.is_operator(Some("+")) {
+                                        left = Right(Node::create("Add", vec![left, right]))
+                                    } else if token.is_operator(Some("-")) {
+                                        left = Right(Node::create("Subtract", vec![left, right]))
+                                    } else {
+                                        return Err(Exception::create(Error::UnexpectedToken(token), current_method!()));
+                                    }
+                                }
                             }
                         }
-                        operators.push(token);
                     }
+                }
+                Ok(left)
+            }
+        }
+    }
+
+    fn parse_multiplicative(&mut self) -> Result<NodeItem, Exception> {
+        match self.parse_primary() {
+            Err(error) => Err(Exception::relay(error, current_method!())),
+            Ok(mut left) => {
+                while !self.stream.eof() {
+                    if !self.stream.is_operator(Some("*")) && !self.stream.is_operator(Some("/")) { break; }
+                    match self.stream.next() {
+                        Err(error) => return Err(Exception::relay(error, current_method!())),
+                        Ok(token) => {
+                            match self.parse_primary() {
+                                Err(error) => return Err(Exception::relay(error, current_method!())),
+                                Ok(right) => {
+                                    if token.is_operator(Some("*")) {
+                                        left = Right(Node::create("Multiply", vec![left, right]));
+                                    } else if token.is_operator(Some("/")) {
+                                        left = Right(Node::create("Divide", vec![left, right]));
+                                    } else {
+                                        return Err(Exception::create(Error::UnexpectedToken(token.clone()), current_method!()));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                Ok(left)
+            }
+        }
+    }
+
+    fn parse_primary(&mut self) -> Result<NodeItem, Exception> {
+        match self.stream.next() {
+            Err(error) => Err(Exception::relay(error, current_method!())),
+            Ok(token) => {
+                if token.is_number(None) {
+                    Ok(Left(token))
+                } else if token.is_punctuation(Some('(')) {
+                    match self.parse_additive() {
+                        Err(error) => Err(Exception::relay(error, current_method!())),
+                        Ok(node) => {
+                            match self.stream.read_punctuation(Some(")")) {
+                                Err(error) => Err(Exception::relay(error, current_method!())),
+                                Ok(_) => Ok(node)
+                            }
+                        }
+                    }
+                } else {
+                    Err(Exception::create(Error::UnexpectedToken(token.clone()), current_method!()))
                 }
             }
         }
-
-        while let Some(op) = operators.pop() {
-            items.push(op);
-        }
-
-        items
-    }
-
-    fn create_tree(&mut self, value: Vec<Token>) -> Node {
-        let mut stack: NodeValue = vec![];
-        let operations = |c: &str| match c {
-            "+" => "Addition",
-            "-" => "Subtraction",
-            "*" => "Multiplication",
-            "/" => "Division",
-            "^" => "Pow",
-            _ => "",
-        };
-
-        for token in value {
-            if token.is_whitespace(None) {
-                continue;
-            } else if token.is_number(None) {
-                stack.push(Left(token));
-            } else if token.is_operator(None) {
-                let b = stack.pop().unwrap();
-                let a = stack.pop().unwrap();
-                stack.push(Right(Node::create(
-                    operations(token.get_value().as_str()),
-                    vec![a, b]
-                )));
-            }
-        }
-
-        Node::create("Calcul", stack)
     }
 }

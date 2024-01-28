@@ -12,15 +12,23 @@ use parser::*;
 static ALLOC: wee_alloc::WeeAlloc = wee_alloc::WeeAlloc::INIT;
 
 #[wasm_bindgen]
-pub fn lex(text: &str, with_position: bool) -> String {
-  let mut str = String::from("");
-  for token in Lexer::from(String::from(text)).read() {
-    str = format!("{},{}", str, token.get_json(with_position))
+pub fn lex(text: &str, with_position: bool) -> Result<String, JsError> {
+  match Lexer::from(String::from(text)).lex() {
+    Err(error) => Err(JsError::new(format!(r#"{}"#, error).as_str())),
+    Ok(tokens) => {
+      let mut str = String::from("");
+      for token in tokens {
+        str = format!("{},{}", str, token.get_json(with_position))
+      }
+      Ok(format!(r#"[{}]"#, str.trim_start_matches(&[','])))
+    }
   }
-  format!(r#"[{}]"#, str.trim_start_matches(&[',']))
 }
 
 #[wasm_bindgen]
-pub fn parse(text: &str, with_position: bool) -> String {
-  format!(r#"{}"#, Parser::from(String::from(text)).read().get_json(with_position))
+pub fn parse(text: &str, with_position: bool) -> Result<String, JsError> {
+  match Parser::from(String::from(text)).parse() {
+    Err(error) => Err(JsError::new(format!(r#"{}"#, error).as_str())),
+    Ok(node) => Ok(format!(r#"{}"#, node.get_json(with_position)))
+  }
 }

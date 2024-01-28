@@ -82,8 +82,8 @@ impl InputStream {
     pub fn read_number(&mut self) -> InputResult {
         self.read_while(|c, str| {
             if c == '.' { !str.contains('.') }
-            else if c == 'e' { !str.contains('e') }
-            else if c == '+' || c == '-' { str.len() == 0 || str.ends_with('e') }
+            // else if c == 'e' { !str.contains('e') }
+            // else if c == '+' || c == '-' { str.len() == 0 || str.ends_with('e') }
             else { c.is_digit(10) }
         })
     }
@@ -129,6 +129,17 @@ impl Lexer {
         self.input.eof(0)
     }
 
+    pub fn lex(&mut self) -> Result<Vec<Token>, Exception> {
+        let mut buffer: Vec<Token> = vec![];
+        while !self.input.eof(0) {
+            match self.next() {
+                Err(error) => return Err(Exception::relay(error, current_method!())),
+                Ok(token) => buffer.push(token),
+            }
+        }
+        Ok(buffer)
+    }
+
     pub fn read(&mut self) -> Vec<Token> {
         let mut buffer: Vec<Token> = vec![];
         while !self.input.eof(0) {
@@ -165,13 +176,7 @@ impl Lexer {
 
         if self.input.eof(1) { return false; }
         let next = self.input.peek(1).unwrap();
-        if current == '.' && next.is_digit(10) { return true; } // .1
-
-        if '+' != current && '-' != current { return false; }
-        if next.is_digit(10) { return true; } // +1 | -1
-
-        if self.input.eof(2) { return false; }
-        next == '.' && self.input.peek(2).unwrap().is_digit(10) // +.1 | -.1
+        current == '.' && next.is_digit(10) // .1
     }
 
     fn read_identifier(&mut self) -> LexerResult {
