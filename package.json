@@ -1,12 +1,14 @@
 {
   "name": "calculator",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "create an app to consume rust-generated wasm packages",
   "main": "index.js",
   "scripts": {
-    "build": "webpack --config webpack.config.js",
-    "start": "webpack-dev-server",
-    "watch": "webpack --watch --config webpack.config.js"
+    "build:dev": "npx encore dev",
+    "build:prod": "NODE_ENV=prod npx encore production",
+    "start": "nodemon --exec ts-node ./lib/index.ts",
+    "serve": "NODE_OPTIONS=--max-old-space-size=2048 npm run build:dev -- --watch",
+    "wasm": "wasm-pack build --out-name index --out-dir assets/vendors --target web && rm assets/vendors/.gitignore assets/vendors/package.json assets/vendors/README.md"
   },
   "repository": {
     "type": "git",
@@ -20,9 +22,41 @@
   ],
   "author": "Jocelyn Faihy <jochlain@gmail.com>",
   "license": "MIT",
+  "dependencies": {
+    "dotenv": "^16.4.1",
+    "express": "^4.18.2",
+    "typescript": "^5.3.3"
+  },
   "devDependencies": {
+    "@babel/core": "^7.23.9",
+    "@babel/preset-env": "^7.23.9",
+    "@babel/preset-typescript": "^7.23.3",
+    "@symfony/webpack-encore": "^4.6.1",
+    "@types/node": "^20.11.9",
+    "nodemon": "^3.0.3",
+    "raw-loader": "^4.0.2",
+    "sass": "^1.70.0",
+    "sass-loader": "^14.0.0",
+    "ts-loader": "^9.5.1",
+    "ts-node": "^10.9.2",
     "webpack": "^5.90.0",
     "webpack-cli": "^5.1.4",
     "webpack-dev-server": "^4.15.1"
+  },
+  "_moduleAliases": {
+    "#components": "./assets/components",
+    "#vendors": "./assets/vendors"
+  },
+  "nodemonConfig": {
+    "verbose": false,
+    "ext": "*",
+    "ignore": [
+      "./node_modules"
+    ],
+    "watch": [
+      "./bin",
+      "./lib",
+      "./src"
+    ]
   }
 }

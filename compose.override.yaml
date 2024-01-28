@@ -1,7 +1,7 @@
 version: '3'
 
 services:
-  front:
+  server:
     networks: [ "proxy", "default" ]
     labels:
       - "traefik.enable=true"

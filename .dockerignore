@@ -1,0 +1,39 @@
+###> workspace
+/.idea/
+###< workspace
+
+###> cdn
+/cdn/*
+!/cdn/.gitignore
+###< cdn
+
+###> python
+__pycache__
+###< python
+
+###> friendsofphp/php-cs-fixer ###
+/.php-cs-fixer.php
+/.php-cs-fixer.cache
+###< friendsofphp/php-cs-fixer ###
+
+###> sublime
+*.sublime-project
+*.sublime-workspace
+###< sublime
+
+###> symfony/framework-bundle ###
+/public/bundles/
+/var/
+/vendor
+###< symfony/framework-bundle ###
+
+###> symfony/phpunit-bridge ###
+.phpunit.result.cache
+/phpunit.xml
+###< symfony/phpunit-bridge ###
+
+###> symfony/webpack-encore-bundle ###
+/node_modules/
+/public/build/
+npm-debug.log
+###< symfony/webpack-encore-bundle ###
